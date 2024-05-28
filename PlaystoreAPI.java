@@ -65,7 +65,10 @@ public class PlaystoreAPI {
     }
 
     public String getPublishedVersion(){
-        return this.version;
+        if(!version.isBlank()){
+            return version;
+        }
+        return "Unknown";
     }
 
     public float getEstimatedDownloadsCount(){
