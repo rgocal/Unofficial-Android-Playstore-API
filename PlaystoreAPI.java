@@ -1,4 +1,4 @@
-package com.project.packageName;
+package com.android.packageName;
 
 import android.content.Context;
 import android.text.Spanned;
@@ -16,109 +16,157 @@ import org.json.JSONException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 
 public class PlaystoreAPI {
-  
-    private String TAG = "GooglePlay API";
-    private String version, estimatedDownloads, exactDownloads, lastUpdated,launchData,developer,lastUpdateMessage,rating,noOfRatings,desc;
-    private String[] screenshots;
-    private String logoURL, bannerURL;
 
-    private boolean hasListing;
-
-    private final String apiURL = "https://api-playstore.rajkumaar.co.in/json?id=";
+    private final String TAG = "GooglePlay API";
+    private final String ERROR_TAG = "There was an error retrieving this information, please try again later...";
+    private String name, packageID, logoURL, bannerURL, privacyPolicy, email, website, version, estimatedDownloads, exactDownloads, lastUpdated, launchData, developer, lastUpdateMessage, rating, noOfRatings, desc;
+    private String[] images;
+    private Boolean objectLoaded = false;
 
     public PlaystoreAPI(final Context context, final String targetedPackage){
         RequestQueue queue = Volley.newRequestQueue(context);
+        String apiURL = "https://api-playstore.rajkumaar.co.in/json?id=";
         String Url = apiURL + targetedPackage;
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, Url, null, response -> {
-            try {
-                Log.e(TAG, "Getting info for " + response.getString("packageID"));
-                Log.e(TAG, Url);
+                try {
+                    Log.e(TAG, "Getting info for " + response.getString("packageID"));
+                    Log.e(TAG, Url);
+                    objectLoaded = true;
 
-                version = response.getString("version");
-                estimatedDownloads = response.getString("downloads");
-                exactDownloads = response.getString("downloadsExact");
-                lastUpdated = response.getString("lastUpdated");
-                launchData = response.getString("launchDate");
-                developer = response.getString("developer");
-                lastUpdateMessage = response.getString("latest_update_message");
-                rating = response.getString("rating");
-                noOfRatings = response.getString("noOfUsersRated");
-                desc = response.getString("description");
+                    packageID = response.getString("packageID");
+                    name = response.getString("name");
+                    privacyPolicy = response.getString("privacyPolicy");
+                    email = response.getString("supportEmail");
+                    website = response.getString("website");
+                    version = response.getString("version");
+                    estimatedDownloads = response.getString("downloads");
+                    exactDownloads = response.getString("downloadsExact");
+                    lastUpdated = response.getString("lastUpdated");
+                    launchData = response.getString("launchDate");
+                    developer = response.getString("developer");
+                    lastUpdateMessage = response.getString("latestUpdateMessage");
+                    rating = response.getString("rating");
+                    noOfRatings = response.getString("noOfUsersRated");
+                    desc = response.getString("description");
 
-                screenshots = new String[]{response.getString("screenshots")};
+                    String arrayOfStringString = response.getString("screenshots");
+                    arrayOfStringString = arrayOfStringString.replace(" ","").replace("[","").replace("]","").replace("\\", "");
+                    images =  arrayOfStringString.split(",");
 
-                logoURL = response.getString("logo");
-                bannerURL = response.getString("banner");
-                hasListing = true;
-            } catch (JSONException e) {
-                hasListing = false;
-                Log.d(TAG, e.toString());
-            }
+                    Log.e("Screenshots Downloaded", String.valueOf(images.length));
+
+                    logoURL = response.getString("logo");
+                    bannerURL = response.getString("banner");
+                } catch (JSONException e) {
+                    Log.d(TAG, e.toString());
+                    objectLoaded = false;
+                }
+
         }, error -> {
-            hasListing = false;
             Log.d(TAG, "Could not find any readable data... No playstore listing?");
+            objectLoaded = false;
         });
 
         queue.add(jsonObjectRequest);
     }
 
+    public String getName(){
+        return name;
+    }
+    
+    public URL getPolicyURL() throws MalformedURLException {
+        return new URL(privacyPolicy);
+    }
+    
+    public String getSupportEmail() {
+        return email;
+    }
+    
+    public URL getDevWebsite() throws MalformedURLException {
+        return new URL(website);
+    }
+    
+    public String getPackageID(){
+        return packageID;
+    }
+
+    public boolean hasSessionLoaded(){
+        return objectLoaded;
+    }
+
     public String getPublishedVersion(){
-        if(!version.isBlank()){
-            return version;
-        }
-        return "Unknown";
+        return Objects.requireNonNullElse(version, ERROR_TAG);
     }
 
     public float getEstimatedDownloadsCount(){
-        String formatted = estimatedDownloads.replace("+", "").replace(",", "");
-        return Double.valueOf(formatted).floatValue();
+        if(estimatedDownloads != null) {
+            String formatted = estimatedDownloads.replace("+", "").replace(",", "");
+            return Double.valueOf(formatted).floatValue();
+        }else{
+            return 0;
+        }
     }
 
-    public String getEstimatedDownloadsString(){
-        return estimatedDownloads;
+    public String getEstimatedDownloadsString() {
+        return Objects.requireNonNullElse(estimatedDownloads, ERROR_TAG);
     }
 
     public float getExactDownloadCount(){
-        return Double.valueOf(exactDownloads).floatValue();
+        if(exactDownloads != null) {
+            return Double.valueOf(exactDownloads).floatValue();
+        }else{
+            return 0;
+        }
     }
 
     public String getLastUpdateDate(){
-        return lastUpdated;
+        return Objects.requireNonNullElse(lastUpdated, ERROR_TAG);
     }
 
     public String getLaunchDate(){
-        return launchData;
+        return Objects.requireNonNullElse(launchData, ERROR_TAG);
     }
 
     public String getPublisherName(){
-        return developer;
+        return Objects.requireNonNullElse(developer, ERROR_TAG);
     }
 
     public Spanned GetChangelog(){
-        return HtmlCompat.fromHtml(lastUpdateMessage, HtmlCompat.FROM_HTML_MODE_COMPACT);
+        return HtmlCompat.fromHtml(Objects.requireNonNullElse(lastUpdateMessage, ERROR_TAG), HtmlCompat.FROM_HTML_MODE_COMPACT);
     }
 
     public String getCurrentRatingString(){
-        return rating;
+        return Objects.requireNonNullElse(rating, ERROR_TAG);
     }
 
     public float getNumberOfRatingsCount(){
-        String formatted = noOfRatings.replace(",", "");
-        return Double.valueOf(formatted).floatValue();
+        if(noOfRatings != null) {
+            String formatted = noOfRatings.replace(",", "");
+            return Double.valueOf(formatted).floatValue();
+        }else{
+            return 0;
+        }
     }
 
     public String getNumberOfRatings(){
-        return noOfRatings;
+        return Objects.requireNonNullElse(noOfRatings, ERROR_TAG);
     }
 
     public Spanned getPublishedDescription(){
-        return HtmlCompat.fromHtml(desc, HtmlCompat.FROM_HTML_MODE_COMPACT);
+        return HtmlCompat.fromHtml(Objects.requireNonNullElse(desc, ERROR_TAG), HtmlCompat.FROM_HTML_MODE_COMPACT);
     }
 
-    public String[] getAvailableScreenshots(){
-        return screenshots;
+    public List<String> getAvailableScreenshots(){
+        List<String> screens = new ArrayList<>();
+        Collections.addAll(screens, images);
+        Log.e("Screenshots Processed", String.valueOf(screens.size()));
+        return screens;
     }
 
     public URL getPublishedBannerURL() throws MalformedURLException {
@@ -127,10 +175,6 @@ public class PlaystoreAPI {
 
     public URL getPublishedLogoURL() throws MalformedURLException {
         return new URL(logoURL);
-    }
-
-    public boolean isListingAvailable(){
-        return hasListing;
     }
 
     public DecimalFormat formatValue(){
