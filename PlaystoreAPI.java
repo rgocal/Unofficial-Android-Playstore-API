@@ -1,4 +1,4 @@
-package com.android.packageName;
+package com.gocalsd.xyz;
 
 import android.content.Context;
 import android.text.Spanned;
@@ -35,9 +35,9 @@ public class PlaystoreAPI {
         String Url = apiURL + targetedPackage;
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, Url, null, response -> {
                 try {
+                    objectLoaded = true;
                     Log.e(TAG, "Getting info for " + response.getString("packageID"));
                     Log.e(TAG, Url);
-                    objectLoaded = true;
 
                     packageID = response.getString("packageID");
                     name = response.getString("name");
@@ -56,8 +56,8 @@ public class PlaystoreAPI {
                     desc = response.getString("description");
 
                     String arrayOfStringString = response.getString("screenshots");
-                    arrayOfStringString = arrayOfStringString.replace(" ","").replace("[","").replace("]","").replace("\\", "");
-                    images =  arrayOfStringString.split(",");
+                    arrayOfStringString = arrayOfStringString.replace(" ","").replace("[","").replace("]","").replace("\\", "").replace("https://play-lh.googleusercontent.com/", "").replace("\"", "");
+                    images = arrayOfStringString.split(",");
 
                     Log.e("Screenshots Downloaded", String.valueOf(images.length));
 
@@ -69,8 +69,8 @@ public class PlaystoreAPI {
                 }
 
         }, error -> {
-            Log.d(TAG, "Could not find any readable data... No playstore listing?");
             objectLoaded = false;
+            Log.d(TAG, "Could not find any readable data... No playstore listing?");
         });
 
         queue.add(jsonObjectRequest);
@@ -79,19 +79,19 @@ public class PlaystoreAPI {
     public String getName(){
         return name;
     }
-    
+
     public URL getPolicyURL() throws MalformedURLException {
         return new URL(privacyPolicy);
     }
-    
+
     public String getSupportEmail() {
         return email;
     }
-    
+
     public URL getDevWebsite() throws MalformedURLException {
         return new URL(website);
     }
-    
+
     public String getPackageID(){
         return packageID;
     }
@@ -102,6 +102,10 @@ public class PlaystoreAPI {
 
     public String getPublishedVersion(){
         return Objects.requireNonNullElse(version, ERROR_TAG);
+    }
+
+    public int getPublishedVersionCode(){
+        return Integer.parseInt(version);
     }
 
     public float getEstimatedDownloadsCount(){
@@ -162,11 +166,15 @@ public class PlaystoreAPI {
         return HtmlCompat.fromHtml(Objects.requireNonNullElse(desc, ERROR_TAG), HtmlCompat.FROM_HTML_MODE_COMPACT);
     }
 
-    public List<String> getAvailableScreenshots(){
+    public List<String> getAvailableScreenshotsIds(){
         List<String> screens = new ArrayList<>();
         Collections.addAll(screens, images);
         Log.e("Screenshots Processed", String.valueOf(screens.size()));
         return screens;
+    }
+
+    public String getGoogleContentURL(){
+        return "https://play-lh.googleusercontent.com/";
     }
 
     public URL getPublishedBannerURL() throws MalformedURLException {
